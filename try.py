@@ -4,7 +4,6 @@ import requests
 from bs4 import BeautifulSoup
 from telegram import ForceReply, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, Updater, CallbackQueryHandler, CallbackContext
-# from telegram.ext.callbackcontext import CallbackContext
 import asyncio
 import time
 from contextlib import AsyncExitStack
@@ -75,6 +74,8 @@ async def start(update, context: CallbackContext):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text('Hi! I will notify you about new PSOAS apartment updates.', reply_markup=reply_markup)
+    # Планируем выполнение функции проверки каждые 10 минут
+    asyncio.create_task(schedule_check(update.message.chat_id, context.bot))
 
 # Function to handle inline button callbacks
 async def button(update: Update, context: CallbackContext):
@@ -84,24 +85,7 @@ async def button(update: Update, context: CallbackContext):
         if query.data == 'check':
             await check_command(query.message, context)  # Используем query.message здесь
         elif query.data == 'help':
-            await query.message.edit_text(text="SOS!")
-    # query = update.callback_query
-    # query.answer()
-    # if query.data == 'check':
-    #     await check_command(query.message, context)
-    #     # updates = get_updates()
-    #     # if updates:
-    #     #     send_updates(updates, context.bot, query.message.chat_id)
-    #     # else:
-    #     #     await query.message.edit_text(text="No new apartment updates found.")
-    # elif query.data == 'help':
-    #     await query.message.edit_text(text="SOS!")
-
-
-# async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-#     """Send a message when the command /help is issued."""
-#     await update.message.reply_text("Here are the available commands:\n/check - Check for new updates")
-
+            await query.message.edit_text(text="Here are the available commands:\n/check - Check for new updates")
 
 async def schedule_job(chat_id, context):
     updates = get_updates()
@@ -112,15 +96,6 @@ async def schedule_job(chat_id, context):
     else:
         await context.bot.send_message(chat_id=chat_id, text="No new apartment updates found.")
 
-
-# async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-#     """Gives new choices"""
-#     if context.job:
-#         await update.message.reply_text('There is already a scheduled job.')
-#         return
-    # # Schedule the job
-    # asyncio.create_task(schedule_job(update.message.chat_id, context))
-    # await update.message.reply_text('Job scheduled successfully.')
 async def check_command(message, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Gives new choices"""
     if context.job:
@@ -130,6 +105,25 @@ async def check_command(message, context: ContextTypes.DEFAULT_TYPE) -> None:
     asyncio.create_task(schedule_job(message.chat_id, context))  # Используем message.chat_id здесь
     await message.reply_text('Job scheduled successfully.')
 
+# async def schedule_check(context: ContextTypes.DEFAULT_TYPE):
+#     while True:
+#         updates = get_updates()
+#         if updates:
+#             for update in updates:
+#                 await context.bot.send_message(chat_id=context.job.context["chat_id"], text=update)
+#         else:
+#             await context.bot.send_message(chat_id=context.job.context["chat_id"], text="No new apartment updates found.")
+#         await asyncio.sleep(60)  # Пауза в 600 секунд (10 минут)
+
+async def schedule_check(chat_id, bot):
+    while True:
+        updates = get_updates()
+        if updates:
+            for update in updates:
+                await bot.send_message(chat_id=chat_id, text=update)
+        else:
+            await bot.send_message(chat_id=chat_id, text="No new apartment updates found.")
+        await asyncio.sleep(30)
 
 def main() -> None:
     """Start the bot."""
