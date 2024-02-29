@@ -8,7 +8,7 @@ import asyncio
 import time
 from contextlib import AsyncExitStack
 
-Token = '6803252445:AAHIuRqEERFqHhJYNBPoxRIrRgdn58z-9pk'
+Token = 'TSSS'
 
 # Enable logging
 logging.basicConfig(
